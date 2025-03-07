@@ -27,6 +27,7 @@ This Python script monitors a specified directory for new video files and automa
 - OpenCV (`cv2`)
 - FFmpeg
 - Watchdog
+- mediapipe
 
 ## Installation
 
