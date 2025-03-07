@@ -7,7 +7,7 @@ This Python script monitors a specified directory for new video files and automa
 ## Features
 
 - Watches a specified directory for new video files
-- Supports .mp4, .mov, .avi, and .mkv video formats
+- Supports .mp4, .mov, .avi, and .mkv .mts video formats
 - Converts videos to a format compatible with OpenCV using FFmpeg
 - Extracts one frame per second from each video
 - Saves extracted frames as JPEG images
