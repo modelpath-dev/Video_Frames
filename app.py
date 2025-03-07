@@ -6,11 +6,15 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 class VideoHandler(FileSystemEventHandler):
+    def __init__(self, processed_files):
+        self.processed_files = processed_files
+
     def on_created(self, event):
         if event.is_directory:
             return
         if event.src_path.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
-            self.process_video(event.src_path)
+            if event.src_path not in self.processed_files:
+                self.process_video(event.src_path)
 
     def convert_video(self, input_path, output_path):
         command = [
@@ -28,11 +32,11 @@ class VideoHandler(FileSystemEventHandler):
     def process_video(self, video_path):
         try:
             video_name = os.path.splitext(os.path.basename(video_path))[0]
-            output_dir = os.path.join(os.path.dirname(video_path), video_name)
-            os.makedirs(output_dir, exist_ok=True)
+            video_dir = os.path.dirname(video_path)
+            output_directory = os.path.join(video_dir, "frames")
+            os.makedirs(output_directory, exist_ok=True)
 
-            # Convert video to a format OpenCV can handle
-            converted_path = os.path.join(output_dir, f"{video_name}_converted.mp4")
+            converted_path = os.path.join(output_directory, f"{video_name}_converted.mp4")
             self.convert_video(video_path, converted_path)
 
             video = cv2.VideoCapture(converted_path)
@@ -48,17 +52,17 @@ class VideoHandler(FileSystemEventHandler):
                 if not ret:
                     break
 
-                if frame_count % fps == 0:  # Extract one frame per second
-                    frame_path = os.path.join(output_dir, f"frame_{frame_count // fps:04d}.jpg")
+                if frame_count % fps == 0:
+                    frame_path = os.path.join(output_directory, f"{video_name}_frame_{frame_count // fps:04d}.jpg")
                     cv2.imwrite(frame_path, frame)
 
                 frame_count += 1
 
             video.release()
-            print(f"Processed {video_path}. Frames saved in {output_dir}")
+            print(f"Processed {video_path}. Frames saved in {output_directory}.")
 
-            # Remove the converted video to save space
             os.remove(converted_path)
+            self.processed_files.add(video_path)
 
         except subprocess.CalledProcessError as e:
             print(f"Error during video conversion: {e}")
@@ -67,13 +71,24 @@ class VideoHandler(FileSystemEventHandler):
         except Exception as e:
             print(f"An error occurred while processing the video {video_path}: {e}")
 
+def process_existing_files(directory, processed_files):
+    for file_name in os.listdir(directory):
+        file_path = os.path.join(directory, file_name)
+        if os.path.isfile(file_path) and file_name.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
+            if file_path not in processed_files:
+                handler.process_video(file_path)
+
 if __name__ == "__main__":
     print("Video Frame Extractor")
     watch_dir = input("Enter the directory to watch: ")
+    os.makedirs(watch_dir, exist_ok=True)
 
-    event_handler = VideoHandler()
+    processed_files = set()
+    handler = VideoHandler(processed_files)
+    process_existing_files(watch_dir, processed_files)
+
     observer = Observer()
-    observer.schedule(event_handler, watch_dir, recursive=False)
+    observer.schedule(handler, watch_dir, recursive=False)
     observer.start()
 
     print(f"Watching directory: {watch_dir}")
