@@ -19,7 +19,6 @@ This Python script monitors a specified directory for new video files and automa
 - Tracks the images and ranks the image.
 - The image which is clear and face is clearly visible will get top rank, and will be saved first in a new folder. (ex. 0001.jpg ( High rank)  , 0020 (Comparatively lower rank than previous)) means image is not clear.
 - Option to select top N frames. And store it in new folder.
-- Cleans up temporary converted videos to save disk space
 
 
 ## Requirements
